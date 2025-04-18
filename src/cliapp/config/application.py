@@ -18,5 +18,5 @@ class ApplicationConfig(BaseConfig):
         ConfigValue("author", AUTHOR),
         ConfigValue("version", VersionConfig()),
         ConfigValue("theme", ThemeConfig()),
-        ConfigValue("version", ShellConfig()),
+        ConfigValue("shell", ShellConfig()),
     ]
