@@ -4,7 +4,7 @@ CLIApp is a Python framework designed to help you build interactive command-line
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install CLIApp.
 
 ```bash
 pip install cliapp
