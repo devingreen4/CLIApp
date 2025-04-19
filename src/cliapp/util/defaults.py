@@ -7,7 +7,7 @@ AUTHOR = "me"
 VERSION = 0
 
 # Theme
-FONT = "big-money-ne"
+FONT = "larry3d"
 
 # Color
 COLOR = "#FFFFFF"

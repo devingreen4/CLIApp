@@ -11,3 +11,8 @@ class VersionConfig(BaseConfig):
         ConfigValue("minor", VERSION),
         ConfigValue("patch", VERSION)
     ]
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        self.string = f"{self.major}.{self.minor}.{self.patch}"
