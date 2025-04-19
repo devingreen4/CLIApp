@@ -1,3 +1,20 @@
 {
-    "shortname": "TEST"
+    "shortname": "Test Application",
+    "fullname": "Test Application CLI",
+    "version": {
+        "number": 0,
+        "subversion": 0,
+        "bug_version": 0
+    },
+    "theme": {
+        "color": {
+            "primary": "#2191FB",
+            "secondary": "#BA274A",
+            "text": "#D8D8D8"
+        },
+        "font": "larry3d"
+    },
+    "shell": {
+        "outro": "Bye, Dev! See you next time! :)"
+    }
 }
