@@ -1,55 +1,60 @@
+from typing import Optional, List, Callable, Any
+
+# Third-party libraries
 from cmd2 import CommandSet, categorize
 from cmd2.constants import HELP_FUNC_PREFIX, COMMAND_FUNC_PREFIX
-from typing import Optional, List, Callable
+
+# Local/project imports
 from cliapp.config import ApplicationConfig
 from cliapp.interface import Interface
 from cliapp.command import Command
 
-class ApplicationCommandSet(CommandSet): 
-    def __init__(self):
-        super().__init__()
-
-class Application():
+class Application:
+    """
+    Main application class that loads configuration, initializes the interface,
+    manages commands, and runs the command loop.
+    """
     def __init__(self, config: Optional[str] = None):
+        """
+        Initializes the application.
+
+        Args:
+            config_path: Optional path to the application configuration file.
+        """
+        # Load application configuration from the specified path
         self.__config: ApplicationConfig = ApplicationConfig.fromPath(config)
+        # Initialize the cmd2 interface with the loaded configuration
         self.__interface = Interface(self.__config)
-        
+
+        # List to hold Command objects
         self.commands: List[Command] = []
-        
-        # signal.signal(signal.SIGINT, self.signal_handler)
-        
-        # intro = Text(
-        #     self.c.shell.intro, 
-        #     color=self.c.theme.color.secondary, 
-        #     padding=0
-        # ).render()
-        # self.intro = intro
-        
-        # name = self.c.theme.color.primary.format(self.c.shortname)
-        # prompt = self.c.shell.prompt
-        # self.prompt = f"{name} {prompt}"
-        # self.ruler = self.c.theme.color.primary.format("=")
-        
-        # self.doc_header = self.c.theme.color.secondary.format(f"{self.c.shortname} Commands")
-        # self.undoc_header = self.c.theme.color.secondary.format("Experimental Commands")
-        # self.misc_header = self.c.theme.color.secondary.format("Additional Help Items")
-    
-    def __setMethod(self, name: str, exec: Callable):        
+
+    def __setMethod(self, name: str, exec: Callable[..., Any]):
+        """
+        Helper method to dynamically set a method (do_* or help_*) on the interface.
+        """
+        # Set the callable as an attribute on the interface instance
         setattr(self.__interface, name, exec)
+        # Categorize the method for help output
+        
+        # Retrieve the function just set (setattr doesn't return the object)
         func = getattr(self.__interface, name)
         categorize(func, f"{self.__config.shortname} Commands")
-    
-    def __reloadMethods(self):
-        for command in self.commands:
-            self.__setMethod(COMMAND_FUNC_PREFIX + command.name, command.exec)
-            self.__setMethod(HELP_FUNC_PREFIX + command.name, command.help)
-    
-    def add(self, command: Command):
+
+    def add(self, command: Command) -> None:
+        """
+        Adds a Command object to the application and registers its methods with the interface.
+
+        Args:
+            command: The Command instance to add.
+        """
         self.commands.append(command)
-        self.__reloadMethods()
-        
-    def run(self):
+        # Set the new command's methods
+        self.__setMethod(COMMAND_FUNC_PREFIX + command.name, command.exec)
+        self.__setMethod(HELP_FUNC_PREFIX + command.name, command.help)
+
+    def run(self) -> None:
+        """
+        Starts the command loop of the interface.
+        """
         self.__interface.cmdloop()
-        
-    
-    

@@ -1,90 +1,134 @@
 import os
 from functools import partial
+from typing import Optional, List # Specific imports are preferred
+
 from cmd2 import Cmd, style, DEFAULT_SHORTCUTS
-from cmd2.table_creator import Column, SimpleTable
+from cmd2.table_creator import Column, SimpleTable # Kept as they are likely used in the part I don't have yet
 from cmd2.utils import align_center
-from typing import Optional, List
-from cliapp.util.tools import asciiArt
+# Assuming these are local/project imports
 from cliapp.config import ApplicationConfig
-from cliapp.command import Command
+from cliapp.command import Command # Kept as they are likely used in the part I don't have yet
+from cliapp.util.tools import asciiArt
+
 
 class Interface(Cmd):
+    """
+    Custom command-line interface inheriting from cmd2.Cmd.
+    Manages the application's shell environment, prompts, banners, and command execution.
+    """
     def __init__(self, config: ApplicationConfig):
+        """
+        Initializes the custom interface with application configuration.
+        """
+        # Copy default shortcuts and remove specific ones (@, @@)
         shortcuts = dict(DEFAULT_SHORTCUTS)
         shortcuts.pop("@")
         shortcuts.pop("@@")
-        
+
+        # Initialize cmd2.Cmd base class
+        # auto_load_commands=False is set to manually manage commands if needed
         super().__init__(shortcuts=shortcuts, auto_load_commands=False)
+
+        # Manually remove certain default cmd2 commands by deleting their do_* methods
         del Cmd.do_alias
         del Cmd.do_macro
         del Cmd.do_run_pyscript
         del Cmd.do_run_script
         del Cmd.do_set
-        
+
+        # Store the application configuration
         self.__config = config
-        
+
+        # Configure cmd2 attributes using values from the config and helper methods
         self.intro = self.__introBanner()
         self.prompt = f"{style(self.__config.shortname, fg=self.__config.theme.color.primary)} {style(self.__config.shell.prompt, fg=self.__config.theme.color.text)}"
-        self.editor = "code"
-        self.debug = True
+        self.editor = "code" # Default editor
+        self.debug = True # Debug mode enabled
         self.continuation_prompt = "> "
         self.default_category = 'Default Commands'
         self.default_error = "Unknown command: {}."
-    
-    def precmd(self, statement):
-        self.doc_header = self.__helpBanner()
-        return super().precmd(statement)
-        
-    def poutput(self, msg = '', *, end = '\n'):
+
+    def poutput(self, msg: str = '', *, end: str = '\n') -> None:
+        """
+        Hook method to print output. Overrides cmd2's poutput to apply default text styling.
+        """
+        # Create a partial function for styling with the default text color
         style_text = partial(style, fg=self.__config.theme.color.text)
+        # Use cmd2's internal print_to method with the styled partial
         return self.print_to(self.stdout, msg, end=end, style=style_text)
-        
+
     def __introBanner(self) -> str:
+        """
+        Generates the application's introductory banner.
+        """
+        # Generate ASCII art for the short name
         banner = asciiArt(self.__config.shortname, self.__config.theme.font)
+        # Center and style the banner
         banner = align_center(banner)
         banner = style(banner, fg=self.__config.theme.color.primary)
-        
+
+        # Create welcome messages
         title = f"Welcome to {self.__config.fullname}!"
         subtitle = f"Version {self.__config.version.string}. Created by {self.__config.author}."
         message = "\n".join([title, subtitle]) + "\n"
+        # Center and style the welcome messages
         message = align_center(message)
         message = style(message, fg=self.__config.theme.color.text)
-        
-        intro = style(self.__config.shell.intro, fg=self.__config.theme.color.secondary)
-        
-        return "\n".join([banner, message, intro])
-    
+
+        # Style the shell intro message
+        intro_msg = style(self.__config.shell.intro, fg=self.__config.theme.color.secondary)
+
+        # Combine all parts of the intro banner
+        return "\n".join([banner, message, intro_msg])
+
     def __helpBanner(self) -> str:
-        banner = asciiArt("Help", "sub-zero")#self.__config.theme.font)
+        """
+        Generates the header banner for the help output.
+        """
+        # Generate ASCII art for "Help"
+        banner = asciiArt("Help", self.__config.theme.font)
+        # Center and style the help banner
         banner = align_center(banner)
         banner = style(banner, fg=self.__config.theme.color.secondary)
-        
-        message = "Documented commands (use 'help -v' for verbose/'help <topic>' for details):"
+
+        # Help message text
+        message = "Documented commands (use 'help -v' for verbose/'help <topic>' for details)"
+        # Center and style the help message
         message = align_center(message)
         message = style(message, fg=self.__config.theme.color.text)
-        
+
+        # Combine banner and message for the help header
         return "\n".join([banner, message])
-        
-    def do_quit(self, statement):
+
+    def do_quit(self, statement: str) -> bool:
         """Exit this application"""
-        print()
+        print() # Print a blank line before the outro
+        # Style and print the outro message
         outro = style(self.__config.shell.outro, fg=self.__config.theme.color.secondary)
         print(outro)
+        # Call the superclass do_quit to handle the actual exit
         return super().do_quit(statement)
-    
-    def do_exit(self, statement):
+
+    def do_exit(self, statement: str) -> bool:
         """Exit this application"""
+        # Simply delegate to do_quit
         return self.do_quit(statement)
-    
-    def do_clear(self, _):
+
+    def do_clear(self, _: str) -> None:
         'Clear the terminal screen'
+        # WARNING: os.system('clear') is Unix-specific.
+        # Consider cross-platform alternatives (e.g., 'cls' on Windows, libraries like colorama).
         os.system('clear')
-    
-    
-    
-    
-    
-    
+
+    def do_help(self, statement: str) -> None:
+        """
+        Displays help for commands.
+        Overrides cmd2's do_help to set a custom help banner.
+        """
+        # Set the custom help banner before calling the superclass help method
+        self.doc_header = self.__helpBanner()
+        # Call the base class do_help to handle parsing and displaying help
+        super().do_help(statement)
     
     #
     # Manipulate the help-menu table by overriding the original functionality

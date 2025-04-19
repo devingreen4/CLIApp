@@ -1,18 +1,23 @@
-# Application
+# Defaults for Application Metadata
 SHORTNAME = "CLI App"
 FULLNAME = "My CLI Application"
 AUTHOR = "me"
 
-# Version
-VERSION = 0
+# Default Version Component
+MAJOR_VERSION = 1
+MINOR_VERSION = 0
+PATCH_VERSION = 0
 
-# Theme
+# Default Theme Settings
 FONT = "larry3d"
+# Other great options: sub-zero, larry3d, ansi_shadow, ansi_regular, big-money-ne
 
-# Color
-COLOR = "#FFFFFF"
+# Default Color Setting
+PRIMARY_COLOR = "#FFFFFF"
+SECONDARY_COLOR = "#FFFFFF"
+TEXT_COLOR = "#FFFFFF"
 
-# Shell
+# Default Shell Settings
 PROMPT = ">> "
 INTRO = "Use 'help' or '?' for assistance."
 OUTRO = "Bye."

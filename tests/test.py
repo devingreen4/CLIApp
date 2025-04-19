@@ -16,6 +16,3 @@ if __name__ == "__main__":
     app.add(command)
     
     app.run()
-    
-    
-# sub-zero, larry3d, ansi_shadow, ansi_regular, big-money-ne

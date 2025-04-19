@@ -1,45 +1,168 @@
-from argparse import ArgumentParser
-from typing import Callable, Optional, Coroutine
 import inspect
 import shlex
+from argparse import ArgumentParser, ArgumentError
+from typing import Callable, Optional, Coroutine, Any, List, Dict, Type
+
 from cliapp.util import synchronizer
 
-class Command():
-    def __init__(self, 
+class Command:
+    """
+    Represents a single command that can be executed within the CLI application.
+    Includes argument parsing capabilities.
+    """
+    def __init__(self,
                  name: str,
-                 executable: Callable | Coroutine = lambda *args, **kwargs: None):
-        
+                 executable: Callable[..., Any] | Coroutine[Any, Any, Any] = lambda *args, **kwargs: None):
+        """
+        Initializes a Command instance.
+
+        Args:
+            name: The name of the command.
+            executable: The function or async coroutine to execute when the command is called.
+                        Defaults to a no-operation function.
+        """
         self.name = name
         self.__executable = executable
-        
+
+        # Initialize an ArgumentParser for this command
         self.__parser = ArgumentParser(prog=name)
-        self.__parser.add_argument("input", nargs="*", help=f"An string input for {name}()")
         
-        self.exec = lambda s: self._exec(s)
-        self.help = lambda: self.__parser.print_help()
-        
-    def _exec(self, statement):
+        # Add a default positional argument to capture command input
+        self.__parser.add_argument(
+            "input",
+            nargs="*",  # Capture zero or more positional arguments
+            help=f"String input for the {name} command."
+        )
+
+        # Public methods for execution and help
+        self.exec: Callable[[str], None] = lambda s: self.__exec(s)
+        self.help: Callable[[], None] = lambda: self.__parser.print_help()
+
+    def __exec(self, statement: str) -> None:
+        """
+        Internal method to parse the statement and execute the command's executable.
+
+        Args:
+            statement: The raw input string from the command line.
+        """
         try:
+            # Split the input string into arguments respecting quotes
             argv = shlex.split(statement)
+            # Parse arguments using the internal parser
             args = self.__parser.parse_args(argv)
-            
+
+            # Convert parsed arguments (excluding 'input') to keyword arguments
             kwargs = vars(args)
-            input = kwargs.pop('input')
-            
-            
+            input_args = kwargs.pop('input', [])
+
+            # Check if the executable is a coroutine and run it accordingly
             if inspect.iscoroutinefunction(self.__executable):
-                synchronizer.run(self.__executable, *input, **kwargs)
+                # Use synchronizer.run for async executables
+                synchronizer.run(self.__executable, *input_args, **kwargs)
             else:
-                self.__executable(*input, **kwargs)
-            
-        except BaseException as e:
-            print(e)
+                # Directly call synchronous executables
+                self.__executable(*input_args, **kwargs)
+
+        except SystemExit:
+            # Catch SystemExit specifically, which is raised by parse_args() on error/help
+            # Pass or handle as needed (parse_args with exit_on_error=False is an alternative)
+            pass
+        except Exception as e:
+            # Catch other exceptions during execution or parsing (excluding SystemExit)
+            print(f"Error executing command '{self.name}': {e}")
+            # Consider logging the traceback for debugging
+            # import traceback
+            # traceback.print_exc()
             return
+
+    def addFlag(self, 
+                short: Optional[str] = None, 
+                full: Optional[str] = None, 
+                help: Optional[str] = None,
+                required: bool = False) -> None:
+        """
+        Adds a boolean flag argument to the command's parser.
+
+        Args:
+            short: The short form of the flag (e.g., "v" for -v).
+            full: The full form of the flag (e.g., "verbose" for --verbose).
+                  If None, only the short form is added.
+            help: The help string for the flag. Defaults to a generic description.
+            required: If True, the option must be provided on the command line. Defaults to False.
+            
+        Raises:
+            ValueError: If neither short nor full form is provided for the option.
+        """
+        # Provide a default help string if none is given
+        if help is None: # Use 'is None' for checking None
+            help_text = f'A flag labeled "-{short}"'
+        else:
+            help_text = help
+
+        # Ensure name is provided
+        if short is None and full is None:
+            raise ValueError("A flag must have at least a short or a full form.")
+
+        # Build the list of flags/names for argparse
+        flags = []
+        if short is not None:
+            flags.append(f"-{short}")
+        if full is not None:
+            flags.append(f"--{full}")
+
+        # Add the argument to the internal parser as a boolean flag
+        self.__parser.add_argument(
+            *flags, 
+            action="store_true",
+            required=required,
+            help=help_text
+        )
         
-    def addFlag(self, short, full = None, help: Optional[str] = None):
-        if help == None: help = f'a flag labeled "-{short}"'
-        
-        flags = [f"-{short}"]
-        if full != None: flags.append(f"--{full}")
-        
-        self.__parser.add_argument(*flags, action="store_true", help=help)
+    def addOption(self,
+                  short: Optional[str] = None,
+                  full: Optional[str] = None,
+                  help: Optional[str] = None,
+                  type: Type = str,
+                  default: Optional[Any] = None,
+                  required: bool = False) -> None:
+        """
+        Adds an option argument that takes a value to the command's parser.
+        An option must have at least a short or a full form.
+
+        Args:
+            short: The short form of the option (e.g., "o" for -o value).
+            full: The full form of the option (e.g., "output" for --output value).
+                  If None, only the short form is added.
+            help: The help string for the option.
+            type: The data type to convert the option value to (e.g., str, int, float). Defaults to str.
+            default: The default value for the option if not provided on the command line.
+            required: If True, the option must be provided on the command line. Defaults to False.
+
+        Raises:
+            ValueError: If neither short nor full form is provided for the option.
+        """
+        # Provide a default help string if none is given
+        if help is None: # Use 'is None' for checking None
+            help_text = f'A flag labeled "-{short}"'
+        else:
+            help_text = help
+
+        # Ensure name is provided
+        if short is None and full is None:
+            raise ValueError("An option must have at least a short or a full form.")
+
+        # Build the list of flags/names for argparse
+        flags = []
+        if short is not None:
+            flags.append(f"-{short}")
+        if full is not None:
+            flags.append(f"--{full}")
+
+        # Add the argument to the internal parser as an option that stores a value
+        self.__parser.add_argument(
+            *flags,
+            type=type,
+            default=default,
+            required=required,
+            help=help_text
+        )
