@@ -2,7 +2,9 @@ import inspect
 import shlex
 from argparse import ArgumentParser, ArgumentError
 from typing import Callable, Optional, Coroutine, Any, List, Dict, Type
+from cmd2 import Cmd, style
 
+from cliapp.interface import Interface
 from cliapp.util import synchronizer
 
 class Command:
@@ -23,6 +25,7 @@ class Command:
         """
         self.name = name
         self.__executable = executable
+        self.selections: Dict[str, List[str]] = dict()
 
         # Initialize an ArgumentParser for this command
         self.__parser = ArgumentParser(prog=name)
@@ -35,10 +38,10 @@ class Command:
         )
 
         # Public methods for execution and help
-        self.exec: Callable[[str], None] = lambda s: self.__exec(s)
+        self.exec: Callable[[Cmd, str], None] = lambda *args: self.__exec(*args)
         self.help: Callable[[], None] = lambda: self.__parser.print_help()
 
-    def __exec(self, statement: str) -> None:
+    def __exec(self, app: Interface, statement: str) -> None:
         """
         Internal method to parse the statement and execute the command's executable.
 
@@ -50,10 +53,30 @@ class Command:
             argv = shlex.split(statement)
             # Parse arguments using the internal parser
             args = self.__parser.parse_args(argv)
-
+            
             # Convert parsed arguments (excluding 'input') to keyword arguments
             kwargs = vars(args)
             input_args = kwargs.pop('input', [])
+            
+            # Iterate over provided selections/options
+            for name, options in self.selections.items():
+                # Express the amount of options as a string
+                range = "a number"
+                if len(options) == 2: range = "1 or 2"
+                elif len(options) > 2: range += f" 1-{len(options)}"
+                
+                # Create a prompt for the user to input their selection
+                message = f"Please enter {range} to select a value for '{name}' "
+                message = style(message, fg=app.config.theme.color.secondary)
+                
+                prompt = style(app.config.shell.prompt, fg=app.config.theme.color.text)
+                prompt = message + prompt
+                
+                # Prompt the user to make the selection
+                result = app.select(options, prompt)
+                
+                # Add the selection value to the keyword arguments
+                kwargs[name] = result
 
             # Check if the executable is a coroutine and run it accordingly
             if inspect.iscoroutinefunction(self.__executable):
@@ -166,3 +189,20 @@ class Command:
             required=required,
             help=help_text
         )
+        
+    def addSelection(self, name: str, options: List[str] = []):
+        """
+        Provides a series of options for the user to select through after the arguments have been parsed.
+
+        Args:
+            name: The name of the value the user is selecting.
+            options: The list of options the user may select through.
+
+        Raises:
+            ValueError: If the list of options is empty.
+        """
+        if len(options) == 0:
+            raise ValueError("You must provide at least one option to select from.")
+        
+        self.selections[name] = options
+        

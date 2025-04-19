@@ -50,7 +50,9 @@ class Application:
         """
         self.commands.append(command)
         # Set the new command's methods
-        self.__setMethod(COMMAND_FUNC_PREFIX + command.name, command.exec)
+        exec = lambda statement: command.exec(self.__interface, statement)
+        
+        self.__setMethod(COMMAND_FUNC_PREFIX + command.name, exec)
         self.__setMethod(HELP_FUNC_PREFIX + command.name, command.help)
 
     def run(self) -> None:

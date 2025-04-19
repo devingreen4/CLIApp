@@ -2,7 +2,7 @@ from cliapp import Application
 from cliapp import Command
 import asyncio
 
-async def test(*args, n=False, t=False):
+async def test(*args, another=None, n=False, t=False):
     print(*args)
     await asyncio.sleep(5)
 
@@ -12,6 +12,10 @@ if __name__ == "__main__":
     command = Command("test", test)
     command.addFlag("n", help="Should show number result")
     command.addFlag("t")
+    
+    command.addSelection("option", [ "first", "second" ])
+    command.addSelection("another", [ "me", "myself", "I" ])
+    command.addSelection("name", [ "Devin" ])
     
     app.add(command)
     
