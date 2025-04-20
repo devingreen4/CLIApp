@@ -14,13 +14,15 @@ class Command:
     """
     def __init__(self,
                  name: str,
-                 executable: Callable[..., Any] | Coroutine[Any, Any, Any] = lambda *args, **kwargs: None):
+                 executable: Callable[..., Any] | Coroutine[Any, Any, Any] = lambda *args, **kwargs: None,
+                 needsInput: bool = False):
         """
         Initializes a Command instance.
 
         Args:
             name: The name of the command.
             executable: The function or async coroutine to execute when the command is called.
+            needsInput: A boolean value indicating whether or not an input should be captured from the command line.
                         Defaults to a no-operation function.
         """
         self.name = name
@@ -31,11 +33,12 @@ class Command:
         self.__parser = ArgumentParser(prog=name)
         
         # Add a default positional argument to capture command input
-        self.__parser.add_argument(
-            "input",
-            nargs="*",  # Capture zero or more positional arguments
-            help=f"String input for the {name} command."
-        )
+        if needsInput:
+            self.__parser.add_argument(
+                "input",
+                nargs="*",  # Capture zero or more positional arguments
+                help=f"String input for the {name} command."
+            )
 
         # Public methods for execution and help
         self.exec: Callable[[Cmd, str], None] = lambda *args: self.__exec(*args)
