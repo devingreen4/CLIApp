@@ -75,7 +75,7 @@ class Interface(Cmd):
         message = style(message, fg=self.config.theme.color.text)
 
         # Style the shell intro message
-        intro_msg = style(self.config.shell.intro, fg=self.config.theme.color.secondary)
+        intro_msg = "\n" + style(self.config.shell.intro, fg=self.config.theme.color.secondary)
 
         # Combine all parts of the intro banner
         return "\n".join([banner, message, intro_msg])
