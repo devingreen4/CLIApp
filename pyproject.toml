@@ -3,8 +3,8 @@ requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cliapp"
-version = "0.0.1"
+name = "dev-cliapp"
+version = "1.0.0"
 authors = [
   { name="Devin Green", email="devin.green@me.com" },
 ]

@@ -13,10 +13,10 @@ The framework is centered around two key components:
 
 ## Installation
 
-Assuming `cliapp` is packaged correctly (e.g., with `setuptools` or `poetry`), you would typically install it using pip:
+You can install the package using pip:
 
 ```bash
-pip install cliapp
+pip install dev-cliapp
 ```
 
 You will also need to install the dependencies used by the framework:
