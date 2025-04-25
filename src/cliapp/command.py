@@ -36,7 +36,7 @@ class Command:
         if needsInput:
             self.__parser.add_argument(
                 "input",
-                nargs="*",  # Capture zero or more positional arguments
+                nargs="+",  # Capture one or more positional arguments
                 help=f"String input for the {name} command."
             )
 
