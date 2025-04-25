@@ -1,7 +1,7 @@
 import inspect
 import shlex
 from argparse import ArgumentParser, ArgumentError
-from typing import Callable, Optional, Coroutine, Any, List, Dict, Type
+from typing import Callable, Optional, Coroutine, Any, List, Dict, Type, Tuple
 from cmd2 import Cmd, style
 
 from cliapp.interface import Interface
@@ -27,7 +27,7 @@ class Command:
         """
         self.name = name
         self.__executable = executable
-        self.selections: Dict[str, List[str]] = dict()
+        self.selections: Dict[str, Tuple[str, List[str]]] = dict()
 
         # Initialize an ArgumentParser for this command
         self.__parser = ArgumentParser(prog=name)
@@ -62,14 +62,16 @@ class Command:
             input_args = kwargs.pop('input', [])
             
             # Iterate over provided selections/options
-            for name, options in self.selections.items():
+            for name, value in self.selections.items():
+                description, options = value
+                
                 # Express the amount of options as a string
                 range = "a number"
                 if len(options) == 2: range = "1 or 2"
                 elif len(options) > 2: range += f" 1-{len(options)}"
                 
                 # Create a prompt for the user to input their selection
-                message = f"Please enter {range} to select a value for '{name}' "
+                message = f"Please enter {range} to select {description} "
                 message = style(message, fg=app.config.theme.color.secondary)
                 
                 prompt = style(app.config.shell.prompt, fg=app.config.theme.color.text)
@@ -193,13 +195,17 @@ class Command:
             help=help_text
         )
         
-    def addSelection(self, name: str, options: List[str] = []):
+    def addSelection(self, 
+                     name: str, 
+                     options: List[str] = [], 
+                     description: Optional[str] = None):
         """
         Provides a series of options for the user to select through after the arguments have been parsed.
 
         Args:
-            name: The name of the value the user is selecting.
+            name: The variable name to encapsulate the selection in for the command executable
             options: The list of options the user may select through.
+            description: A description of the selection options to provide the user
 
         Raises:
             ValueError: If the list of options is empty.
@@ -207,5 +213,6 @@ class Command:
         if len(options) == 0:
             raise ValueError("You must provide at least one option to select from.")
         
-        self.selections[name] = options
+        if description is None: description = "an option"
+        self.selections[name] = (description, options)
         
