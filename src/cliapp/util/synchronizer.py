@@ -13,14 +13,8 @@ def run(method: Coroutine, *args: Any, **kwargs: Any) -> None:
         *args: Positional arguments to pass to the coroutine.
         **kwargs: Keyword arguments to pass to the coroutine.
     """
-    # Create a new event loop
-    loop = asyncio.get_event_loop()
-    
     # Run the coroutine until it completes
-    loop.run_until_complete(method(*args, **kwargs))
-    
-    # Close the loop (potentially problematic if other tasks are pending)
-    loop.close()
+    asyncio.run(method(*args, **kwargs))
 
 
 async def resolve(futures: List[asyncio.Future]) -> List[Any]:
